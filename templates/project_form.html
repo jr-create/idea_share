@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - 项目共创平台{% endblock %}
+
+{% block content %}
+    <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 mt-8">
+        <h1 class="text-2xl font-bold mb-6">{{ title }}</h1>
+        
+        {% if error != "" %}
+            <div class="bg-red-100 text-red-700 p-3 rounded-md mb-4">
+                {{ error }}
+            </div>
+        {% endif %}
+        
+        <div class="mb-6 p-4 bg-gray-50 rounded-md">
+            <h2 class="text-lg font-medium mb-2">从模板创建</h2>
+            <p class="text-gray-600 mb-4">您可以选择一个现有的项目模板来快速创建项目</p>
+            <a href="/templates" class="text-blue-600 hover:text-blue-800 font-medium">
+                浏览项目模板
+            </a>
+        </div>
+        
+        <form method="post" action="{{ action }}">
+            <div class="mb-4">
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">项目标题</label>
+                <input type="text" id="title" name="title" value="{{ project.title }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+            </div>
+            
+            <div class="mb-4">
+                <label for="summary" class="block text-sm font-medium text-gray-700 mb-1">项目简介</label>
+                <textarea id="summary" name="summary" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>{{ project.summary }}</textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">项目描述</label>
+                <textarea id="description" name="description" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">{{ project.description }}</textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label for="stage" class="block text-sm font-medium text-gray-700 mb-1">项目阶段</label>
+                <select id="stage" name="stage" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="planning" {% if project.stage == "planning" %}selected{% endif %}>规划中</option>
+                    <option value="development" {% if project.stage == "development" %}selected{% endif %}>开发中</option>
+                    <option value="testing" {% if project.stage == "testing" %}selected{% endif %}>测试中</option>
+                    <option value="production" {% if project.stage == "production" %}selected{% endif %}>已上线</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">标签（用逗号分隔）</label>
+                <input type="text" id="tags" name="tags" value="{{ project.tags }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如：rust,web,opensource">
+            </div>
+            
+            <div class="flex justify-end space-x-4">
+                <a href="{{ cancel_url }}" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">取消</a>
+                <button type="submit" class="bg-primary text-white font-semibold py-2 px-4 rounded-md hover:bg-primary/90 transition-colors">保存</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

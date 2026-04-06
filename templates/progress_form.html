@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}更新项目进度 - 项目共创平台{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-sm p-6 fade-in">
+    <h1 class="text-2xl font-bold mb-6">更新项目进度: {{ project_title }}</h1>
+    
+    <form method="post" action="/projects/{{ project_id }}/progress">
+        <div class="mb-4">
+            <label for="progress_percentage" class="block text-sm font-medium text-gray-700 mb-1">进度百分比</label>
+            <div class="flex items-center space-x-4">
+                <input type="range" id="progress_percentage" name="progress_percentage" min="0" max="100" value="0" class="flex-grow">
+                <span id="progress_value" class="text-gray-600">0%</span>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <label for="content" class="block text-sm font-medium text-gray-700 mb-1">进度描述</label>
+            <textarea id="content" name="content" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required></textarea>
+        </div>
+        
+        <div class="mb-4">
+            <label for="update_date" class="block text-sm font-medium text-gray-700 mb-1">更新日期</label>
+            <input type="date" id="update_date" name="update_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+        </div>
+        
+        <div class="flex justify-end space-x-4">
+            <a href="/projects/{{ project_id }}" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100">取消</a>
+            <button type="submit" class="bg-primary text-white font-semibold py-2 px-4 rounded-md hover:bg-primary/90">保存</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // 进度条实时更新
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBar = document.getElementById('progress_percentage');
+        const progressValue = document.getElementById('progress_value');
+        
+        progressBar.addEventListener('input', function() {
+            progressValue.textContent = this.value + '%';
+        });
+        
+        // 设置默认日期为今天
+        document.getElementById('update_date').valueAsDate = new Date();
+    });
+</script>
+{% endblock %}

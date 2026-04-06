@@ -1,0 +1,1214 @@
+{% extends "base.html" %}
+
+{% block title %}{{ need.title }} - 需求详情{% endblock %}
+
+{% block content %}
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 面包屑导航 -->
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="/" class="text-gray-700 hover:text-primary">首页</a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <a href="/projects" class="ml-1 text-gray-700 hover:text-primary md:ml-2">项目广场</a>
+                    </div>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <a href="/projects/{{ need.project_id }}" class="ml-1 text-gray-700 hover:text-primary md:ml-2">{{ project_title }}</a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="ml-1 text-gray-500 md:ml-2">{{ need.title }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- 需求详情卡片 -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div class="flex flex-wrap justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ need.title }}</h1>
+                <div class="flex space-x-2">
+                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">{{ need.priority }}</span>
+                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">{{ need.status }}</span>
+                </div>
+            </div>
+            <div class="prose max-w-none">
+                <p>{{ need.description }}</p>
+            </div>
+            <div class="mt-6 text-sm text-gray-500">
+                <p>创建于: {{ need.created_at }}</p>
+                {% if need.updated_at != need.created_at %}
+                    <p>更新于: {{ need.updated_at }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 相关创意方案 -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">相关创意方案</h2>
+                {% if user_exists %}
+                    <button id="add-idea-btn" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                        提交创意
+                    </button>
+                {% endif %}
+            </div>
+            
+            {% if related_ideas.is_empty() %}
+                <p class="text-gray-500">暂无相关创意方案</p>
+            {% else %}
+                <div class="space-y-6">
+                    {% for idea in related_ideas %}
+                        <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-xl font-semibold">{{ idea.title }}</h3>
+                                <div class="flex items-center space-x-2">
+                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">{{ idea.idea_type }}</span>
+                                    {% if user_exists %}
+                                        <button class="text-red-500 hover:text-red-700 delete-idea-btn" data-idea-id="{{ idea.id }}" data-project-id="{{ need.project_id }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="prose max-w-none mb-4">
+                                {{ idea.rendered_content()|safe }}
+                            </div>
+                            <div class="flex flex-wrap justify-between items-center mb-4">
+                                <div class="flex items-center text-sm text-gray-500 mb-2 sm:mb-0">
+                                    <img src="{{ idea.avatar_url }}" alt="{{ idea.username }}" class="w-8 h-8 rounded-full mr-2">
+                                    <span>{{ idea.username }}</span>
+                                    <span class="mx-2">•</span>
+                                    <span>{{ idea.created_at }}</span>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center">
+                                        <span class="text-sm font-medium text-gray-700">可行性:</span>
+                                        <div class="ml-2 w-24 bg-gray-200 rounded-full h-2.5">
+                                            <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ idea.feasibility_score * 10 }}%"></div>
+                                        </div>
+                                        <span class="ml-2 text-sm text-gray-500">{{ idea.feasibility_score }}/10</span>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <span class="font-medium">成本:</span> {{ idea.estimated_cost }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4 mb-4">
+                                <button class="flex items-center text-gray-500 hover:text-primary like-btn" data-idea-id="{{ idea.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                    <span class="like-count">点赞 (10)</span>
+                                </button>
+                                <button class="flex items-center text-gray-500 hover:text-primary comment-btn" data-idea-id="{{ idea.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <span>评论 (5)</span>
+                                </button>
+                            </div>
+                            <div class="mt-4 border-t border-gray-200 pt-4 comment-section" id="comments-{{ idea.id }}">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h5 class="font-medium">评论</h5>
+                                    <div class="flex items-center space-x-2">
+                                        {% if user_exists %}
+                                            {% if let Some(u) = user %}
+                                                {% if u.username == "admin" %}
+                                                    <input type="checkbox" id="select-all-{{ idea.id }}" class="select-all-checkbox mr-2">
+                                                    <label for="select-all-{{ idea.id }}" class="text-sm">全选</label>
+                                                    <button class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm batch-delete-btn" data-idea-id="{{ idea.id }}">批量删除</button>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="space-y-3 comment-list" id="comment-list-{{ idea.id }}">
+                                    <div class="flex items-start comment-item">
+                                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" alt="评论者" class="w-6 h-6 rounded-full mr-2 mt-1">
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between">
+                                                <span class="font-medium text-sm">评论者 1</span>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs text-gray-500">2026-04-05</span>
+                                                    {% if user_exists %}
+                                                        <button class="text-red-500 hover:text-red-700 delete-comment-btn" data-comment-id="1">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-600">这是一条评论内容，表达了对创意方案的看法。</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start comment-item">
+                                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" alt="评论者" class="w-6 h-6 rounded-full mr-2 mt-1">
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between">
+                                                <span class="font-medium text-sm">评论者 2</span>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs text-gray-500">2026-04-05</span>
+                                                    {% if user_exists %}
+                                                        <button class="text-red-500 hover:text-red-700 delete-comment-btn" data-comment-id="2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-600">这是另一条评论内容，提出了一些改进建议。</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start comment-item">
+                                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" alt="评论者" class="w-6 h-6 rounded-full mr-2 mt-1">
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between">
+                                                <span class="font-medium text-sm">评论者 3</span>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs text-gray-500">2026-04-05</span>
+                                                    {% if user_exists %}
+                                                        <button class="text-red-500 hover:text-red-700 delete-comment-btn" data-comment-id="3">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-600">这是第三条评论内容，提供了更多的反馈和建议。</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start comment-item hidden">
+                                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" alt="评论者" class="w-6 h-6 rounded-full mr-2 mt-1">
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between">
+                                                <span class="font-medium text-sm">评论者 4</span>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs text-gray-500">2026-04-05</span>
+                                                    {% if user_exists %}
+                                                        <button class="text-red-500 hover:text-red-700 delete-comment-btn" data-comment-id="4">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-600">这是第四条评论内容，超出了默认显示的数量。</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start comment-item hidden">
+                                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" alt="评论者" class="w-6 h-6 rounded-full mr-2 mt-1">
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between">
+                                                <span class="font-medium text-sm">评论者 5</span>
+                                                <span class="text-xs text-gray-500">2026-04-05</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600">这是第五条评论内容，需要点击更多按钮才能看到。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 comment-toggle" id="comment-toggle-{{ idea.id }}">
+                                    <button class="text-primary hover:underline text-sm toggle-btn" data-idea-id="{{ idea.id }}">
+                                        更多
+                                    </button>
+                                </div>
+                                <div class="mt-4">
+                                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" rows="2" placeholder="写下你的评论..." data-idea-id="{{ idea.id }}" id="comment-content-{{ idea.id }}"></textarea>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <div class="text-sm text-gray-500">
+                                            {% if user_exists %}
+                                                {% if let Some(u) = user %}
+                                                    评论身份: <span class="font-medium">{{ u.username }}</span>
+                                                {% else %}
+                                                    评论身份: <span class="font-medium">游客</span>
+                                                {% endif %}
+                                            {% else %}
+                                                评论身份: <span class="font-medium">游客</span>
+                                            {% endif %}
+                                        </div>
+                                        <button class="bg-primary text-white px-3 py-1 rounded-md hover:bg-primary/90 transition-colors text-sm comment-submit-btn" data-idea-id="{{ idea.id }}">
+                                            发表评论
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 提交创意模态框 -->
+        {% if user_exists %}
+            <div id="idea-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">提交创意方案</h3>
+                        <button id="close-idea-modal" class="text-gray-500 hover:text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <form id="idea-form" method="post" action="/projects/{{ need.project_id }}/ideas">
+                        <input type="hidden" id="need-id" name="need_id" value="{{ need.id }}">
+                        <input type="hidden" id="project-id" name="project_id" value="{{ need.project_id }}">
+                        <div class="mb-4">
+                            <label for="idea-title" class="block text-sm font-medium text-gray-700 mb-1">创意标题</label>
+                            <input type="text" id="idea-title" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="idea-content" class="block text-sm font-medium text-gray-700 mb-1">创意描述</label>
+                            <div class="border border-gray-300 rounded-md overflow-hidden">
+                                <div class="flex border-b border-gray-200">
+                                    <button type="button" class="px-3 py-1 text-sm hover:bg-gray-100" data-action="bold">B</button>
+                                    <button type="button" class="px-3 py-1 text-sm hover:bg-gray-100" data-action="italic">I</button>
+                                    <button type="button" class="px-3 py-1 text-sm hover:bg-gray-100" data-action="list">List</button>
+                                    <button type="button" class="px-3 py-1 text-sm hover:bg-gray-100" data-action="image">Image</button>
+                                </div>
+                                <textarea id="idea-content" name="content" rows="6" class="w-full px-3 py-2 focus:outline-none" required></textarea>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="idea-type" class="block text-sm font-medium text-gray-700 mb-1">创意类型</label>
+                            <select id="idea-type" name="idea_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="feature">功能建议</option>
+                                <option value="design">设计方案</option>
+                                <option value="technical">技术实现</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="feasibility" class="block text-sm font-medium text-gray-700 mb-1">可行性评分 (1-10)</label>
+                                <input type="number" id="feasibility" name="feasibility_score" min="1" max="10" value="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label for="cost" class="block text-sm font-medium text-gray-700 mb-1">预估成本</label>
+                                <input type="text" id="cost" name="estimated_cost" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-idea" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                                取消
+                            </button>
+                            <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                                提交
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+
+        <style>
+            .comment-item {
+                max-height: 1000px;
+                overflow: hidden;
+                transition: max-height 0.3s ease-out;
+            }
+            
+            .comment-item.hidden {
+                max-height: 0;
+                overflow: hidden;
+            }
+            
+            @media (max-width: 640px) {
+                .comment-toggle {
+                    text-align: center;
+                }
+            }
+        </style>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // 点赞功能
+                const likeButtons = document.querySelectorAll('.like-btn');
+                likeButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const ideaId = this.getAttribute('data-idea-id');
+                        const likeCountElement = this.querySelector('.like-count');
+                        
+                        // 模拟点赞功能
+                        let currentCount = parseInt(likeCountElement.textContent.match(/\d+/)[0]);
+                        if (this.classList.contains('liked')) {
+                            // 取消点赞
+                            currentCount--;
+                            this.classList.remove('liked');
+                            this.classList.remove('text-primary');
+                            this.classList.add('text-gray-500');
+                        } else {
+                            // 点赞
+                            currentCount++;
+                            this.classList.add('liked');
+                            this.classList.remove('text-gray-500');
+                            this.classList.add('text-primary');
+                        }
+                        likeCountElement.textContent = `点赞 (${currentCount})`;
+                    });
+                });
+
+                // 评论展开/收起功能
+                const toggleButtons = document.querySelectorAll('.toggle-btn');
+                toggleButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const ideaId = this.getAttribute('data-idea-id');
+                        const commentItems = document.querySelectorAll(`#comment-list-${ideaId} .comment-item`);
+                        const hiddenItems = document.querySelectorAll(`#comment-list-${ideaId} .comment-item.hidden`);
+                        
+                        if (hiddenItems.length > 0) {
+                            // 展开所有评论
+                            commentItems.forEach((item, index) => {
+                                if (index >= 3) {
+                                    item.classList.remove('hidden');
+                                    item.style.maxHeight = '0';
+                                    item.style.overflow = 'hidden';
+                                    item.style.transition = 'max-height 0.3s ease-out';
+                                    setTimeout(() => {
+                                        item.style.maxHeight = item.scrollHeight + 'px';
+                                    }, 10);
+                                }
+                            });
+                            this.textContent = '收起';
+                        } else {
+                            // 收起超出的评论
+                            commentItems.forEach((item, index) => {
+                                if (index >= 3) {
+                                    item.style.maxHeight = '0';
+                                    item.style.overflow = 'hidden';
+                                    item.style.transition = 'max-height 0.3s ease-out';
+                                    setTimeout(() => {
+                                        item.classList.add('hidden');
+                                    }, 300);
+                                }
+                            });
+                            this.textContent = '更多';
+                        }
+                    });
+                });
+
+                // 全局定义 loadComments 函数
+                window.loadComments = function(ideaId) {
+                    fetch(`/comments/${ideaId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const commentList = document.getElementById(`comment-list-${ideaId}`);
+                            if (commentList) {
+                                // 清空现有评论
+                                commentList.innerHTML = '';
+                                
+                                // 按parent_id组织评论
+                                const commentMap = new Map();
+                                const rootComments = [];
+                                
+                                data.comments.forEach(comment => {
+                                    commentMap.set(comment.id, {
+                                        ...comment,
+                                        replies: []
+                                    });
+                                });
+                                
+                                data.comments.forEach(comment => {
+                                    if (comment.parent_id) {
+                                        const parent = commentMap.get(comment.parent_id);
+                                        if (parent) {
+                                            parent.replies.push(comment);
+                                        }
+                                    } else {
+                                        rootComments.push(comment);
+                                    }
+                                });
+                                
+                                // 创建文档片段，批量添加DOM元素
+                                const fragment = document.createDocumentFragment();
+                                
+                                // 渲染评论
+                                function renderComment(comment, level = 0) {
+                                    const newComment = document.createElement('div');
+                                    newComment.className = `flex items-start comment-item ${level > 0 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}`;
+                                    const date = new Date(comment.created_at).toISOString().split('T')[0];
+                                    newComment.innerHTML = `
+                                        <div class="mr-2">
+                                            <input type="checkbox" class="comment-checkbox mt-1" data-comment-id="${comment.id}">
+                                        </div>
+                                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar&image_size=square" alt="评论者" class="w-6 h-6 rounded-full mr-2 mt-1">
+                                        <div class="flex-grow">
+                                            <div class="flex justify-between">
+                                                <span class="font-medium text-sm">${comment.name}</span>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs text-gray-500">${date}</span>
+                                                    <button class="text-primary hover:underline text-xs edit-comment-btn" data-comment-id="${comment.id}" data-idea-id="${ideaId}">
+                                                        编辑
+                                                    </button>
+                                                    <button class="text-red-500 hover:underline text-xs delete-comment-btn" data-comment-id="${comment.id}" data-idea-id="${ideaId}">
+                                                        删除
+                                                    </button>
+                                                    <button class="text-primary hover:underline text-xs reply-btn" data-comment-id="${comment.id}" data-idea-id="${ideaId}">
+                                                        回复
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-600 comment-content" data-comment-id="${comment.id}">${comment.content}</p>
+                                            <div class="mt-2 reply-form hidden" id="reply-form-${comment.id}">
+                                                <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" rows="2" placeholder="写下你的回复..." data-comment-id="${comment.id}" data-idea-id="${ideaId}"></textarea>
+                                                <div class="flex justify-end mt-2">
+                                                    <button class="bg-primary text-white px-3 py-1 rounded-md hover:bg-primary/90 text-sm reply-submit-btn" data-comment-id="${comment.id}" data-idea-id="${ideaId}">
+                                                        回复
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                    
+                                    // 添加回复
+                                    const commentData = commentMap.get(comment.id);
+                                    if (commentData && commentData.replies.length > 0) {
+                                        const repliesContainer = document.createElement('div');
+                                        repliesContainer.className = 'mt-3 space-y-3';
+                                        commentData.replies.forEach(reply => {
+                                            repliesContainer.appendChild(renderComment(reply, level + 1));
+                                        });
+                                        newComment.appendChild(repliesContainer);
+                                    }
+                                    
+                                    return newComment;
+                                }
+                                
+                                // 添加根评论到文档片段
+                                rootComments.forEach(comment => {
+                                    fragment.appendChild(renderComment(comment));
+                                });
+                                
+                                // 一次性添加所有评论到DOM
+                                commentList.appendChild(fragment);
+                                
+                                // 检查评论数量，更新展开/收起按钮
+                                const commentItems = document.querySelectorAll(`#comment-list-${ideaId} .comment-item`);
+                                const toggleButton = document.querySelector(`.toggle-btn[data-idea-id="${ideaId}"]`);
+                                const toggleContainer = document.getElementById(`comment-toggle-${ideaId}`);
+                                
+                                if (commentItems.length > 3) {
+                                    toggleContainer.classList.remove('hidden');
+                                    // 隐藏超出的评论
+                                    commentItems.forEach((item, index) => {
+                                        if (index >= 3) {
+                                            item.classList.add('hidden');
+                                        }
+                                    });
+                                } else {
+                                    toggleContainer.classList.add('hidden');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('加载评论失败:', error);
+                        });
+                }
+                
+                // 加载所有创意的评论
+                document.querySelectorAll('.comment-list').forEach(list => {
+                    const ideaId = list.id.split('-').pop();
+                    if (ideaId) {
+                        loadComments(ideaId);
+                    }
+                });
+                
+                // 回复按钮点击事件
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('reply-btn')) {
+                        const commentId = e.target.getAttribute('data-comment-id');
+                        const replyForm = document.getElementById(`reply-form-${commentId}`);
+                        if (replyForm) {
+                            replyForm.classList.toggle('hidden');
+                        }
+                    }
+                });
+                
+                // 回复提交按钮点击事件
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('reply-submit-btn')) {
+                        const commentId = e.target.getAttribute('data-comment-id');
+                        const ideaId = e.target.getAttribute('data-idea-id');
+                        const contentInput = e.target.closest('.reply-form').querySelector('textarea');
+                        const content = contentInput.value.trim();
+                        
+                        if (!content) {
+                            alert('请输入回复内容');
+                            return;
+                        }
+                        
+                        // 简单的防垃圾评论检查
+                        if (content.length < 5) {
+                            alert('回复内容太短');
+                            return;
+                        }
+                        
+                        // 提交回复到后端
+                        fetch('/comments', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: new URLSearchParams({
+                                idea_id: ideaId,
+                                project_id: '{{ need.project_id }}',
+                                content: content,
+                                parent_id: commentId
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // 重置表单
+                                contentInput.value = '';
+                                // 重新加载评论
+                                loadComments(ideaId);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('提交回复失败:', error);
+                        });
+                    }
+                });
+
+                // 评论功能
+                const commentSubmitButtons = document.querySelectorAll('.comment-submit-btn');
+                commentSubmitButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const ideaId = this.getAttribute('data-idea-id');
+                        const contentInput = document.getElementById(`comment-content-${ideaId}`);
+                        const content = contentInput.value.trim();
+                        
+                        if (!content) {
+                            alert('请输入评论内容');
+                            return;
+                        }
+                        
+                        // 简单的防垃圾评论检查
+                        if (content.length < 5) {
+                            alert('评论内容太短');
+                            return;
+                        }
+                        
+                        // 提交评论到后端
+                        fetch('/comments', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: new URLSearchParams({
+                                idea_id: ideaId,
+                                project_id: '{{ need.project_id }}',
+                                content: content,
+                                parent_id: ''
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // 重置表单
+                                contentInput.value = '';
+                                
+                                // 重新加载评论列表
+                                loadComments(ideaId);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('提交评论失败:', error);
+                            alert('提交评论失败，请重试');
+                        });
+                    });
+                });
+
+                // 富文本编辑器功能
+                const editorButtons = document.querySelectorAll('[data-action]');
+                const contentTextarea = document.getElementById('idea-content');
+                
+                editorButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const action = this.getAttribute('data-action');
+                        const start = contentTextarea.selectionStart;
+                        const end = contentTextarea.selectionEnd;
+                        const selectedText = contentTextarea.value.substring(start, end);
+                        
+                        let newText = '';
+                        switch(action) {
+                            case 'bold':
+                                newText = `**${selectedText}**`;
+                                break;
+                            case 'italic':
+                                newText = `*${selectedText}*`;
+                                break;
+                            case 'list':
+                                newText = `\n- ${selectedText}\n`;
+                                break;
+                            case 'image':
+                                // 这里可以添加图片上传功能
+                                alert('图片上传功能开发中');
+                                return;
+                        }
+                        
+                        contentTextarea.value = contentTextarea.value.substring(0, start) + newText + contentTextarea.value.substring(end);
+                        contentTextarea.focus();
+                        contentTextarea.setSelectionRange(start + 2, start + 2 + selectedText.length);
+                    });
+                });
+
+                // 创意提交模态框
+                const addIdeaBtn = document.getElementById('add-idea-btn');
+                const ideaModal = document.getElementById('idea-modal');
+                const closeIdeaModal = document.getElementById('close-idea-modal');
+                const cancelIdea = document.getElementById('cancel-idea');
+                const ideaForm = document.getElementById('idea-form');
+                
+                if (addIdeaBtn) {
+                    addIdeaBtn.addEventListener('click', function() {
+                        ideaModal.classList.remove('hidden');
+                    });
+                }
+                
+                if (closeIdeaModal) {
+                    closeIdeaModal.addEventListener('click', function() {
+                        ideaModal.classList.add('hidden');
+                    });
+                }
+                
+                if (cancelIdea) {
+                    cancelIdea.addEventListener('click', function() {
+                        ideaModal.classList.add('hidden');
+                    });
+                }
+                
+                // 表单提交由浏览器默认处理
+                // 不需要JavaScript阻止默认行为
+                
+                // 点击模态框外部关闭
+                if (ideaModal) {
+                    ideaModal.addEventListener('click', function(e) {
+                        if (e.target === ideaModal) {
+                            ideaModal.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        </script>
+
+        <!-- 删除创意确认模态框 -->
+        <div id="delete-idea-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">确认删除</h3>
+                    <button id="close-delete-idea-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="mb-4">确定要删除这个创意方案吗？此操作无法撤销。</p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-delete-idea" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                        取消
+                    </button>
+                    <button id="confirm-delete-idea" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors">
+                        确认删除
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // 删除创意功能
+                const deleteIdeaBtns = document.querySelectorAll('.delete-idea-btn');
+                const deleteIdeaModal = document.getElementById('delete-idea-modal');
+                const closeDeleteIdeaModal = document.getElementById('close-delete-idea-modal');
+                const cancelDeleteIdea = document.getElementById('cancel-delete-idea');
+                const confirmDeleteIdea = document.getElementById('confirm-delete-idea');
+                let currentIdeaId = null;
+                let currentProjectId = null;
+
+                deleteIdeaBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        currentIdeaId = this.getAttribute('data-idea-id');
+                        currentProjectId = this.getAttribute('data-project-id');
+                        deleteIdeaModal.classList.remove('hidden');
+                    });
+                });
+
+                if (closeDeleteIdeaModal) {
+                    closeDeleteIdeaModal.addEventListener('click', function() {
+                        deleteIdeaModal.classList.add('hidden');
+                    });
+                }
+
+                if (cancelDeleteIdea) {
+                    cancelDeleteIdea.addEventListener('click', function() {
+                        deleteIdeaModal.classList.add('hidden');
+                    });
+                }
+
+                if (confirmDeleteIdea) {
+                    confirmDeleteIdea.addEventListener('click', function() {
+                        if (currentIdeaId && currentProjectId) {
+                            window.location.href = `/projects/${currentProjectId}/ideas/${currentIdeaId}/delete`;
+                        }
+                    });
+                }
+
+                // 点击模态框外部关闭
+                if (deleteIdeaModal) {
+                    deleteIdeaModal.addEventListener('click', function(e) {
+                        if (e.target === deleteIdeaModal) {
+                            deleteIdeaModal.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        </script>
+
+        <!-- 删除评论确认模态框 -->
+        <div id="delete-comment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">确认删除</h3>
+                    <button id="close-delete-comment-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="mb-4">确定要删除这条评论吗？此操作无法撤销。</p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-delete-comment" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                        取消
+                    </button>
+                    <button id="confirm-delete-comment" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors">
+                        确认删除
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // 删除评论功能
+                const deleteCommentModal = document.getElementById('delete-comment-modal');
+                const closeDeleteCommentModal = document.getElementById('close-delete-comment-modal');
+                const cancelDeleteComment = document.getElementById('cancel-delete-comment');
+                const confirmDeleteComment = document.getElementById('confirm-delete-comment');
+                let currentCommentId = null;
+                let currentIdeaId = null;
+
+                // 使用事件委托处理删除按钮的点击事件
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('delete-comment-btn')) {
+                        currentCommentId = e.target.getAttribute('data-comment-id');
+                        currentIdeaId = e.target.getAttribute('data-idea-id');
+                        deleteCommentModal.classList.remove('hidden');
+                    }
+                });
+
+                if (closeDeleteCommentModal) {
+                    closeDeleteCommentModal.addEventListener('click', function() {
+                        deleteCommentModal.classList.add('hidden');
+                    });
+                }
+
+                if (cancelDeleteComment) {
+                    cancelDeleteComment.addEventListener('click', function() {
+                        deleteCommentModal.classList.add('hidden');
+                    });
+                }
+
+                if (confirmDeleteComment) {
+                    confirmDeleteComment.addEventListener('click', function() {
+                        if (currentCommentId && currentIdeaId) {
+                            // 发送删除请求
+                            fetch(`/comments/${currentCommentId}/delete`, {
+                                method: 'DELETE'
+                            })
+                            .then(response => {
+                                console.log('删除评论响应状态:', response.status);
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log('删除评论响应数据:', data);
+                                if (data.status === 'success') {
+                                    // 重新加载评论
+                                    window.loadComments(currentIdeaId);
+                                    // 关闭模态框
+                                    deleteCommentModal.classList.add('hidden');
+                                } else {
+                                    console.error('删除评论失败:', data);
+                                    alert('删除评论失败，请重试');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('删除评论失败:', error);
+                                alert('删除评论失败，请重试');
+                            });
+                        }
+                    });
+                }
+
+                // 点击模态框外部关闭
+                if (deleteCommentModal) {
+                    deleteCommentModal.addEventListener('click', function(e) {
+                        if (e.target === deleteCommentModal) {
+                            deleteCommentModal.classList.add('hidden');
+                        }
+                    });
+                }
+
+                // 全选功能
+                const selectAllCheckboxes = document.querySelectorAll('.select-all-checkbox');
+                selectAllCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        const ideaId = this.id.split('-').pop();
+                        const commentCheckboxes = document.querySelectorAll(`#comment-list-${ideaId} .comment-checkbox`);
+                        commentCheckboxes.forEach(cb => {
+                            cb.checked = this.checked;
+                        });
+                    });
+                });
+
+                // 批量删除功能
+                const batchDeleteBtns = document.querySelectorAll('.batch-delete-btn');
+                batchDeleteBtns.forEach(btn => {
+                    // 检查是否已经绑定了点击事件
+                    if (!btn.dataset.clickBound) {
+                        btn.dataset.clickBound = 'true';
+                        btn.addEventListener('click', function() {
+                            const ideaId = this.getAttribute('data-idea-id');
+                            const checkedCheckboxes = document.querySelectorAll(`#comment-list-${ideaId} .comment-checkbox:checked`);
+                            
+                            if (checkedCheckboxes.length === 0) {
+                                alert('请先选择要删除的评论');
+                                return;
+                            }
+
+                            if (confirm('确定要删除选中的评论吗？此操作无法撤销。')) {
+                                const commentIds = Array.from(checkedCheckboxes).map(cb => cb.getAttribute('data-comment-id'));
+                                
+                                // 发送批量删除请求
+                                // 使用正确的格式发送多个 comment_ids 字段
+                                let formData = '';
+                                commentIds.forEach((id, index) => {
+                                    if (index > 0) {
+                                        formData += '&';
+                                    }
+                                    formData += `comment_ids=${id}`;
+                                });
+                                formData += `&idea_id=${ideaId}`;
+                                
+                                console.log('批量删除评论请求数据:', formData);
+                                fetch('/comments/batch-delete', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                    },
+                                    body: formData
+                                })
+                                .then(response => {
+                                    console.log('批量删除评论响应状态:', response.status);
+                                    if (!response.ok) {
+                                        // 直接处理错误，不尝试解析 JSON
+                                        console.error('批量删除评论失败，状态码:', response.status);
+                                        alert('批量删除评论失败，请重试');
+                                        return Promise.reject(new Error(`HTTP error! status: ${response.status}`));
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    console.log('批量删除评论响应数据:', data);
+                                    if (data.status === 'success') {
+                                        // 重新加载评论
+                                        window.loadComments(ideaId);
+                                        // 取消全选
+                                        const selectAllCheckbox = document.getElementById(`select-all-${ideaId}`);
+                                        if (selectAllCheckbox) {
+                                            selectAllCheckbox.checked = false;
+                                        }
+                                    } else {
+                                        console.error('批量删除评论失败:', data);
+                                        alert('批量删除评论失败，请重试');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('批量删除评论失败:', error);
+                                    // 不重复显示错误提示
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
+        </div>
+
+        <!-- 编辑评论模态框 -->
+        <div id="edit-comment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">编辑评论</h3>
+                    <button id="close-edit-comment-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form id="edit-comment-form">
+                    <input type="hidden" id="edit-comment-id">
+                    <input type="hidden" id="edit-idea-id">
+                    <div class="mb-4">
+                        <label for="edit-comment-content" class="block text-sm font-medium text-gray-700 mb-1">评论内容</label>
+                        <textarea id="edit-comment-content" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-edit-comment" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                            取消
+                        </button>
+                        <button type="submit" id="confirm-edit-comment" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // 删除评论功能
+                const deleteCommentBtns = document.querySelectorAll('.delete-comment-btn');
+                const deleteCommentModal = document.getElementById('delete-comment-modal');
+                const closeDeleteCommentModal = document.getElementById('close-delete-comment-modal');
+                const cancelDeleteComment = document.getElementById('cancel-delete-comment');
+                const confirmDeleteComment = document.getElementById('confirm-delete-comment');
+                let currentCommentId = null;
+
+                deleteCommentBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        currentCommentId = this.getAttribute('data-comment-id');
+                        deleteCommentModal.classList.remove('hidden');
+                    });
+                });
+
+                if (closeDeleteCommentModal) {
+                    closeDeleteCommentModal.addEventListener('click', function() {
+                        deleteCommentModal.classList.add('hidden');
+                    });
+                }
+
+                if (cancelDeleteComment) {
+                    cancelDeleteComment.addEventListener('click', function() {
+                        deleteCommentModal.classList.add('hidden');
+                    });
+                }
+
+                if (confirmDeleteComment) {
+                    confirmDeleteComment.addEventListener('click', function() {
+                        if (currentCommentId) {
+                            // 发送删除评论的请求
+                            fetch(`/comments/${currentCommentId}/delete`, {
+                                method: 'DELETE',
+                                credentials: 'same-origin'
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    // 从DOM中移除评论元素
+                                    const commentItem = document.querySelector(`.delete-comment-btn[data-comment-id="${currentCommentId}"]`).closest('.comment-item');
+                                    if (commentItem) {
+                                        commentItem.remove();
+                                    }
+                                    // 关闭模态框
+                                    deleteCommentModal.classList.add('hidden');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('删除评论失败:', error);
+                            });
+                        }
+                    });
+                }
+
+                // 点击模态框外部关闭
+                if (deleteCommentModal) {
+                    deleteCommentModal.addEventListener('click', function(e) {
+                        if (e.target === deleteCommentModal) {
+                            deleteCommentModal.classList.add('hidden');
+                        }
+                    });
+                }
+
+                // 编辑评论功能
+                const editCommentBtns = document.querySelectorAll('.edit-comment-btn');
+                const editCommentModal = document.getElementById('edit-comment-modal');
+                const closeEditCommentModal = document.getElementById('close-edit-comment-modal');
+                const cancelEditComment = document.getElementById('cancel-edit-comment');
+                const editCommentForm = document.getElementById('edit-comment-form');
+                const editCommentIdInput = document.getElementById('edit-comment-id');
+                const editIdeaIdInput = document.getElementById('edit-idea-id');
+                const editCommentContent = document.getElementById('edit-comment-content');
+
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('edit-comment-btn')) {
+                        const commentId = e.target.getAttribute('data-comment-id');
+                        const ideaId = e.target.getAttribute('data-idea-id');
+                        const contentElement = document.querySelector(`.comment-content[data-comment-id="${commentId}"]`);
+                        const content = contentElement.textContent.trim();
+
+                        editCommentIdInput.value = commentId;
+                        editIdeaIdInput.value = ideaId;
+                        editCommentContent.value = content;
+                        editCommentModal.classList.remove('hidden');
+                    }
+                });
+
+                if (closeEditCommentModal) {
+                    closeEditCommentModal.addEventListener('click', function() {
+                        editCommentModal.classList.add('hidden');
+                    });
+                }
+
+                if (cancelEditComment) {
+                    cancelEditComment.addEventListener('click', function() {
+                        editCommentModal.classList.add('hidden');
+                    });
+                }
+
+                if (editCommentForm) {
+                    editCommentForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const commentId = editCommentIdInput.value;
+                        const ideaId = editIdeaIdInput.value;
+                        const content = editCommentContent.value.trim();
+
+                        if (!content) {
+                            alert('请输入评论内容');
+                            return;
+                        }
+
+                        // 提交编辑评论的请求
+                        fetch(`/comments/${commentId}/edit`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            credentials: 'same-origin',
+                            body: new URLSearchParams({
+                                content: content
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // 更新DOM中的评论内容
+                                const contentElement = document.querySelector(`.comment-content[data-comment-id="${commentId}"]`);
+                                if (contentElement) {
+                                    contentElement.textContent = content;
+                                }
+                                // 关闭模态框
+                                editCommentModal.classList.add('hidden');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('编辑评论失败:', error);
+                        });
+                    });
+                }
+
+                // 点击模态框外部关闭
+                if (editCommentModal) {
+                    editCommentModal.addEventListener('click', function(e) {
+                        if (e.target === editCommentModal) {
+                            editCommentModal.classList.add('hidden');
+                        }
+                    });
+                }
+
+                // 全选/取消全选功能
+                document.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('select-all-checkbox')) {
+                        const ideaId = e.target.id.split('-').pop();
+                        const checkboxes = document.querySelectorAll(`#comment-list-${ideaId} .comment-checkbox`);
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = e.target.checked;
+                        });
+                    }
+                });
+
+                // 批量删除功能
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('batch-delete-btn')) {
+                        const ideaId = e.target.getAttribute('data-idea-id');
+                        const checkboxes = document.querySelectorAll(`#comment-list-${ideaId} .comment-checkbox:checked`);
+                        const commentIds = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-comment-id'));
+
+                        if (commentIds.length === 0) {
+                            alert('请选择要删除的评论');
+                            return;
+                        }
+
+                        if (confirm('确定要删除选中的评论吗？此操作无法撤销。')) {
+                            // 提交批量删除请求
+                            fetch('/comments/batch-delete', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded'
+                                },
+                                credentials: 'same-origin',
+                                body: new URLSearchParams({
+                                    comment_ids: commentIds.join(',')
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    // 从DOM中移除选中的评论
+                                    checkboxes.forEach(checkbox => {
+                                        const commentItem = checkbox.closest('.comment-item');
+                                        if (commentItem) {
+                                            commentItem.remove();
+                                        }
+                                    });
+                                    // 重置全选复选框
+                                    const selectAllCheckbox = document.getElementById(`select-all-${ideaId}`);
+                                    if (selectAllCheckbox) {
+                                        selectAllCheckbox.checked = false;
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('批量删除评论失败:', error);
+                            });
+                        }
+                    }
+                });
+            });
+        </script>
+    </div>
+{% endblock %}

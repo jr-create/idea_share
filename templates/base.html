@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}项目共创平台{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script>
+        // 前端缓存工具类
+        const CacheUtil = {
+            // 存储数据到localStorage，设置过期时间
+            set: function(key, value, expirationMinutes = 60) {
+                const item = {
+                    value: value,
+                    expiry: new Date().getTime() + (expirationMinutes * 60 * 1000)
+                };
+                localStorage.setItem(key, JSON.stringify(item));
+            },
+            
+            // 从localStorage获取数据，检查是否过期
+            get: function(key) {
+                const itemStr = localStorage.getItem(key);
+                if (!itemStr) return null;
+                
+                const item = JSON.parse(itemStr);
+                const now = new Date().getTime();
+                
+                if (now > item.expiry) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                
+                return item.value;
+            },
+            
+            // 从localStorage获取数据，不检查过期时间（用于临时数据）
+            getWithoutExpiry: function(key) {
+                const itemStr = localStorage.getItem(key);
+                if (!itemStr) return null;
+                
+                const item = JSON.parse(itemStr);
+                return item.value;
+            },
+            
+            // 从sessionStorage获取数据（会话级缓存）
+            getSession: function(key) {
+                const itemStr = sessionStorage.getItem(key);
+                if (!itemStr) return null;
+                
+                const item = JSON.parse(itemStr);
+                const now = new Date().getTime();
+                
+                if (item.expiry && now > item.expiry) {
+                    sessionStorage.removeItem(key);
+                    return null;
+                }
+                
+                return item.value;
+            },
+            
+            // 存储数据到sessionStorage
+            setSession: function(key, value, expirationMinutes = 30) {
+                const item = {
+                    value: value,
+                    expiry: new Date().getTime() + (expirationMinutes * 60 * 1000)
+                };
+                sessionStorage.setItem(key, JSON.stringify(item));
+            },
+            
+            // 移除缓存
+            remove: function(key) {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            },
+            
+            // 清除所有缓存
+            clear: function() {
+                localStorage.clear();
+                sessionStorage.clear();
+            },
+            
+            // 清除过期缓存
+            clearExpired: function() {
+                const now = new Date().getTime();
+                
+                // 清除localStorage中的过期数据
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const itemStr = localStorage.getItem(key);
+                    
+                    try {
+                        const item = JSON.parse(itemStr);
+                        if (item.expiry && now > item.expiry) {
+                            localStorage.removeItem(key);
+                            i--;
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+                
+                // 清除sessionStorage中的过期数据
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    const itemStr = sessionStorage.getItem(key);
+                    
+                    try {
+                        const item = JSON.parse(itemStr);
+                        if (item.expiry && now > item.expiry) {
+                            sessionStorage.removeItem(key);
+                            i--;
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            },
+            
+            // 安全检查：确保不存储敏感信息
+            isSafeToCache: function(data) {
+                const sensitiveKeywords = ['password', 'token', 'secret', 'credential', 'auth'];
+                const dataStr = JSON.stringify(data).toLowerCase();
+                
+                for (const keyword of sensitiveKeywords) {
+                    if (dataStr.includes(keyword)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            },
+            
+            // 安全存储数据
+            safeSet: function(key, value, expirationMinutes = 60) {
+                if (this.isSafeToCache(value)) {
+                    this.set(key, value, expirationMinutes);
+                    return true;
+                }
+                return false;
+            }
+        };
+        
+        // 页面加载时清除过期缓存
+        window.addEventListener('load', function() {
+            CacheUtil.clearExpired();
+        });
+        
+        // 示例：缓存项目列表数据
+        function cacheProjectList(projects) {
+            CacheUtil.safeSet('projectList', projects, 30); // 缓存30分钟
+        }
+        
+        // 示例：获取缓存的项目列表
+        function getCachedProjectList() {
+            return CacheUtil.get('projectList');
+        }
+        
+        // 示例：缓存标签数据
+        function cacheTags(tags) {
+            CacheUtil.safeSet('tags', tags, 60); // 缓存60分钟
+        }
+        
+        // 示例：获取缓存的标签数据
+        function getCachedTags() {
+            return CacheUtil.get('tags');
+        }
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#f59e0b',
+                        dark: '#1f2937',
+                        light: '#f3f4f6',
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .hover-lift {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .hover-lift:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .pulse {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%, 100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+            }
+            .slide-in {
+                animation: slideIn 0.3s ease-in-out;
+            }
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            .scale-in {
+                animation: scaleIn 0.2s ease-in-out;
+            }
+            @keyframes scaleIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+            .button-press {
+                transition: transform 0.1s ease;
+            }
+            .button-press:active {
+                transform: scale(0.98);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .text-gradient {
+                background-clip: text;
+                -webkit-background-clip: text;
+                color: transparent;
+                background-image: linear-gradient(to right, #3b82f6, #10b981);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            }
+            .bg-gradient-secondary {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            }
+            .bg-gradient-accent {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            }
+            .shadow-card {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .shadow-card-hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .border-radius-card {
+                border-radius: 0.75rem;
+            }
+            .spacing-section {
+                margin-bottom: 2rem;
+            }
+            @media (min-width: 640px) {
+                .spacing-section {
+                    margin-bottom: 2.5rem;
+                }
+            }
+            @media (min-width: 768px) {
+                .spacing-section {
+                    margin-bottom: 3rem;
+                }
+            }
+            .spacing-card {
+                padding: 1rem;
+            }
+            @media (min-width: 640px) {
+                .spacing-card {
+                    padding: 1.25rem;
+                }
+            }
+            @media (min-width: 768px) {
+                .spacing-card {
+                    padding: 1.5rem;
+                }
+            }
+            .spacing-element {
+                margin-bottom: 0.75rem;
+            }
+            @media (min-width: 640px) {
+                .spacing-element {
+                    margin-bottom: 1rem;
+                }
+            }
+            .text-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                line-height: 1.2;
+                color: #1f2937;
+            }
+            @media (min-width: 640px) {
+                .text-title {
+                    font-size: 1.75rem;
+                }
+            }
+            @media (min-width: 768px) {
+                .text-title {
+                    font-size: 1.875rem;
+                }
+            }
+            .text-section {
+                font-size: 1.25rem;
+                font-weight: 600;
+                line-height: 1.3;
+                color: #1f2937;
+            }
+            @media (min-width: 640px) {
+                .text-section {
+                    font-size: 1.375rem;
+                }
+            }
+            @media (min-width: 768px) {
+                .text-section {
+                    font-size: 1.5rem;
+                }
+            }
+            .text-subsection {
+                font-size: 1.125rem;
+                font-weight: 600;
+                line-height: 1.4;
+                color: #1f2937;
+            }
+            @media (min-width: 640px) {
+                .text-subsection {
+                    font-size: 1.25rem;
+                }
+            }
+            .text-body {
+                font-size: 0.875rem;
+                font-weight: 400;
+                line-height: 1.6;
+                color: #4b5563;
+            }
+            @media (min-width: 640px) {
+                .text-body {
+                    font-size: 1rem;
+                }
+            }
+            .text-small {
+                font-size: 0.75rem;
+                font-weight: 400;
+                line-height: 1.5;
+                color: #6b7280;
+            }
+            @media (min-width: 640px) {
+                .text-small {
+                    font-size: 0.875rem;
+                }
+            }
+            .text-xs {
+                font-size: 0.625rem;
+                font-weight: 400;
+                line-height: 1.4;
+                color: #9ca3af;
+            }
+            @media (min-width: 640px) {
+                .text-xs {
+                    font-size: 0.75rem;
+                }
+            }
+            .badge-primary {
+                background-color: #dbeafe;
+                color: #1e40af;
+                padding: 0.25rem 0.5rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            @media (min-width: 640px) {
+                .badge-primary {
+                    padding: 0.25rem 0.75rem;
+                    font-size: 0.875rem;
+                }
+            }
+            .badge-secondary {
+                background-color: #d1fae5;
+                color: #065f46;
+                padding: 0.25rem 0.5rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            @media (min-width: 640px) {
+                .badge-secondary {
+                    padding: 0.25rem 0.75rem;
+                    font-size: 0.875rem;
+                }
+            }
+            .badge-accent {
+                background-color: #fef3c7;
+                color: #92400e;
+                padding: 0.25rem 0.5rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            @media (min-width: 640px) {
+                .badge-accent {
+                    padding: 0.25rem 0.75rem;
+                    font-size: 0.875rem;
+                }
+            }
+            .badge-danger {
+                background-color: #fee2e2;
+                color: #b91c1c;
+                padding: 0.25rem 0.5rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            @media (min-width: 640px) {
+                .badge-danger {
+                    padding: 0.25rem 0.75rem;
+                    font-size: 0.875rem;
+                }
+            }
+            .badge-warning {
+                background-color: #fef3c7;
+                color: #92400e;
+                padding: 0.25rem 0.5rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            @media (min-width: 640px) {
+                .badge-warning {
+                    padding: 0.25rem 0.75rem;
+                    font-size: 0.875rem;
+                }
+            }
+            .badge-info {
+                background-color: #dbeafe;
+                color: #1e40af;
+                padding: 0.25rem 0.5rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            @media (min-width: 640px) {
+                .badge-info {
+                    padding: 0.25rem 0.75rem;
+                    font-size: 0.875rem;
+                }
+            }
+            .button-primary {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+                font-weight: 600;
+                padding: 0.5rem 1rem;
+                border-radius: 0.5rem;
+                transition: all 0.3s ease;
+            }
+            @media (min-width: 640px) {
+                .button-primary {
+                    padding: 0.5rem 1.5rem;
+                }
+            }
+            .button-primary:hover {
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .button-primary:active {
+                transform: scale(0.98);
+            }
+            .button-secondary {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                font-weight: 600;
+                padding: 0.5rem 1rem;
+                border-radius: 0.5rem;
+                transition: all 0.3s ease;
+            }
+            @media (min-width: 640px) {
+                .button-secondary {
+                    padding: 0.5rem 1.5rem;
+                }
+            }
+            .button-secondary:hover {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .button-secondary:active {
+                transform: scale(0.98);
+            }
+            .button-accent {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                color: white;
+                font-weight: 600;
+                padding: 0.5rem 1rem;
+                border-radius: 0.5rem;
+                transition: all 0.3s ease;
+            }
+            @media (min-width: 640px) {
+                .button-accent {
+                    padding: 0.5rem 1.5rem;
+                }
+            }
+            .button-accent:hover {
+                background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .button-accent:active {
+                transform: scale(0.98);
+            }
+            .button-outline {
+                border: 1px solid #3b82f6;
+                color: #3b82f6;
+                font-weight: 600;
+                padding: 0.5rem 1rem;
+                border-radius: 0.5rem;
+                transition: all 0.3s ease;
+            }
+            @media (min-width: 640px) {
+                .button-outline {
+                    padding: 0.5rem 1.5rem;
+                }
+            }
+            .button-outline:hover {
+                background-color: #dbeafe;
+                transform: translateY(-1px);
+            }
+            .button-outline:active {
+                transform: scale(0.98);
+            }
+            .button-danger {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                font-weight: 600;
+                padding: 0.5rem 1rem;
+                border-radius: 0.5rem;
+                transition: all 0.3s ease;
+            }
+            @media (min-width: 640px) {
+                .button-danger {
+                    padding: 0.5rem 1.5rem;
+                }
+            }
+            .button-danger:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            .button-danger:active {
+                transform: scale(0.98);
+            }
+            .input-primary {
+                border: 1px solid #d1d5db;
+                border-radius: 0.5rem;
+                padding: 0.625rem 0.75rem;
+                font-size: 0.875rem;
+                transition: all 0.3s ease;
+                width: 100%;
+            }
+            @media (min-width: 640px) {
+                .input-primary {
+                    font-size: 1rem;
+                }
+            }
+            .input-primary:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+            .input-error {
+                border: 1px solid #ef4444;
+                border-radius: 0.5rem;
+                padding: 0.625rem 0.75rem;
+                font-size: 0.875rem;
+                transition: all 0.3s ease;
+                width: 100%;
+            }
+            @media (min-width: 640px) {
+                .input-error {
+                    font-size: 1rem;
+                }
+            }
+            .input-error:focus {
+                outline: none;
+                border-color: #dc2626;
+                box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+            }
+            .error-message {
+                color: #ef4444;
+                font-size: 0.75rem;
+                margin-top: 0.25rem;
+            }
+            @media (min-width: 640px) {
+                .error-message {
+                    font-size: 0.875rem;
+                }
+            }
+            .success-message {
+                color: #10b981;
+                font-size: 0.75rem;
+                margin-top: 0.25rem;
+            }
+            @media (min-width: 640px) {
+                .success-message {
+                    font-size: 0.875rem;
+                }
+            }
+            .loading-spinner {
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid #3b82f6;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .empty-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 2rem 1rem;
+                text-align: center;
+                background-color: #f9fafb;
+                border-radius: 0.75rem;
+            }
+            @media (min-width: 640px) {
+                .empty-state {
+                    padding: 3rem 1.5rem;
+                }
+            }
+            @media (min-width: 768px) {
+                .empty-state {
+                    padding: 4rem 2rem;
+                }
+            }
+            .empty-state-icon {
+                width: 48px;
+                height: 48px;
+                margin-bottom: 1rem;
+                color: #d1d5db;
+            }
+            @media (min-width: 640px) {
+                .empty-state-icon {
+                    width: 56px;
+                    height: 56px;
+                    margin-bottom: 1.25rem;
+                }
+            }
+            @media (min-width: 768px) {
+                .empty-state-icon {
+                    width: 64px;
+                    height: 64px;
+                    margin-bottom: 1.5rem;
+                }
+            }
+            .empty-state-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: #1f2937;
+                margin-bottom: 0.5rem;
+            }
+            @media (min-width: 640px) {
+                .empty-state-title {
+                    font-size: 1.25rem;
+                }
+            }
+            .empty-state-description {
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-bottom: 1.5rem;
+                max-width: 400px;
+            }
+            @media (min-width: 640px) {
+                .empty-state-description {
+                    font-size: 1rem;
+                    margin-bottom: 2rem;
+                }
+            }
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 50;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            .modal-content {
+                background-color: white;
+                border-radius: 0.75rem;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                width: 100%;
+                max-width: 480px;
+                padding: 1.25rem;
+                animation: scaleIn 0.3s ease-in-out;
+            }
+            @media (min-width: 640px) {
+                .modal-content {
+                    padding: 1.5rem;
+                }
+            }
+            .nav-link {
+                position: relative;
+                padding: 0.5rem 0;
+                transition: all 0.3s ease;
+            }
+            .nav-link:hover {
+                color: #3b82f6;
+            }
+            .nav-link::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 0;
+                height: 2px;
+                background-color: #3b82f6;
+                transition: width 0.3s ease;
+            }
+            .nav-link:hover::after {
+                width: 100%;
+            }
+            .nav-link.active {
+                color: #3b82f6;
+            }
+            .nav-link.active::after {
+                width: 100%;
+            }
+            /* 响应式图片 */
+            .responsive-image {
+                max-width: 100%;
+                height: auto;
+                object-fit: cover;
+            }
+            /* 移动端布局优化 */
+            .mobile-spacing {
+                margin-bottom: 1rem;
+            }
+            .mobile-padding {
+                padding: 1rem;
+            }
+            /* 表单元素响应式 */
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            @media (min-width: 640px) {
+                .form-group {
+                    margin-bottom: 1.5rem;
+                }
+            }
+            .form-label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+                font-size: 0.875rem;
+            }
+            @media (min-width: 640px) {
+                .form-label {
+                    font-size: 1rem;
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="/" class="text-2xl md:text-3xl font-bold text-primary hover:opacity-90 transition-all-300">项目共创平台</a>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="/" class="relative hover:text-primary transition-all-300 py-2">
+                        首页
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all-300 hover:w-full"></span>
+                    </a>
+                    <a href="/projects" class="relative hover:text-primary transition-all-300 py-2">
+                        项目广场
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all-300 hover:w-full"></span>
+                    </a>
+                    <a href="/tags" class="relative hover:text-primary transition-all-300 py-2">
+                        标签
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all-300 hover:w-full"></span>
+                    </a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                {% if user_exists %}
+                    {% if let Some(u) = user %}
+                        <a href="/u/{{ u.username }}" class="flex items-center space-x-2 hover:text-primary transition-all-300 px-2 py-1 rounded-md hover:bg-gray-100 hidden md:flex">
+                            <img src="{{ u.avatar_url }}" alt="{{ u.username }}" class="w-8 h-8 rounded-full object-cover">
+                            <span>{{ u.username }}</span>
+                        </a>
+                        <a href="/u/{{ u.username }}" class="md:hidden">
+                            <img src="{{ u.avatar_url }}" alt="{{ u.username }}" class="w-8 h-8 rounded-full object-cover">
+                        </a>
+                    {% endif %}
+                    <a href="/logout" class="hover:text-primary transition-all-300 px-2 py-1 rounded-md hover:bg-gray-100">
+                        退出
+                    </a>
+                {% else %}
+                    <a href="/login" class="hover:text-primary transition-all-300 px-2 py-1 rounded-md hover:bg-gray-100">
+                        登录
+                    </a>
+                    <a href="/register" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-all-300 hover-lift">
+                        注册
+                    </a>
+                {% endif %}
+                <!-- 汉堡菜单按钮 -->
+                <button id="mobile-menu-button" class="md:hidden text-gray-700 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- 移动端导航菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-200">
+            <div class="container mx-auto px-4 py-4 space-y-4">
+                <a href="/" class="block py-2 hover:text-primary transition-all-300">首页</a>
+                <a href="/projects" class="block py-2 hover:text-primary transition-all-300">项目广场</a>
+                <a href="/tags" class="block py-2 hover:text-primary transition-all-300">标签</a>
+                {% if user_exists %}
+                    {% if let Some(u) = user %}
+                        <a href="/u/{{ u.username }}" class="block py-2 hover:text-primary transition-all-300">个人中心</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        <script>
+            // 汉堡菜单切换
+            document.getElementById('mobile-menu-button').addEventListener('click', function() {
+                const mobileMenu = document.getElementById('mobile-menu');
+                mobileMenu.classList.toggle('hidden');
+            });
+        </script>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold mb-2">项目共创平台</h3>
+                    <p class="text-gray-400">让创意变为现实</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="font-semibold mb-2">平台</h4>
+                        <ul class="space-y-1">
+                            <li><a href="/" class="text-gray-400 hover:text-white transition-colors">首页</a></li>
+                            <li><a href="/projects" class="text-gray-400 hover:text-white transition-colors">项目广场</a></li>
+                            <li><a href="/tags" class="text-gray-400 hover:text-white transition-colors">标签</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">资源</h4>
+                        <ul class="space-y-1">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">帮助中心</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">社区指南</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">常见问题</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">关于</h4>
+                        <ul class="space-y-1">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">关于我们</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">联系方式</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors">隐私政策</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2026 项目共创平台. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

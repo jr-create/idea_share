@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.username }} - 个人主页{% endblock %}
+
+{% block content %}
+    <!-- 用户信息 -->
+    <section class="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div class="flex flex-col md:flex-row items-center">
+            <img src="{{ profile_user.avatar_url }}" alt="User avatar" class="w-24 h-24 rounded-full mr-6 mb-4 md:mb-0">
+            <div class="flex-grow">
+                <h1 class="text-2xl font-bold mb-2">{{ profile_user.username }}</h1>
+                {% if profile_user.bio != "" %}
+                    <p class="text-gray-600 mb-4">{{ profile_user.bio }}</p>
+                {% endif %}
+                <p class="text-gray-500 mb-4">加入时间: {{ profile_user.created_at }}</p>
+                <div class="flex space-x-4">
+                    <div class="text-center">
+                        <p class="text-xl font-semibold">{{ stats.projects_count }}</p>
+                        <p class="text-gray-500">发起项目</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xl font-semibold">{{ stats.ideas_count }}</p>
+                        <p class="text-gray-500">提交创意</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xl font-semibold">{{ stats.participations_count }}</p>
+                        <p class="text-gray-500">参与项目</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xl font-semibold">{{ stats.contribution_score }}</p>
+                        <p class="text-gray-500">贡献度</p>
+                    </div>
+                </div>
+            </div>
+            {% if current_user_exists %}
+                <div class="mt-4 md:mt-0">
+                    <a href="/dashboard/profile/edit" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                        编辑资料
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- 发起的项目 -->
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4">{{ profile_user.username }} 发起的项目</h2>
+        {% if user_projects.len() > 0 %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for project in user_projects %}
+                    <div class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                        <h3 class="text-lg font-semibold mb-2"><a href="/projects/{{ project.id }}" class="hover:text-primary">{{ project.title }}</a></h3>
+                        <p class="text-gray-600 mb-4 line-clamp-2">{{ project.summary }}</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            {% for tag in project.tags %}
+                                <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-500">{{ project.stage }}</span>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-gray-500">{{ project.created_at }}</span>
+                                {% if current_user_exists && current_user_id.is_some() && current_user_id.unwrap() == profile_user.id %}
+                                    <button class="text-red-500 hover:text-red-700 delete-project-btn" data-project-id="{{ project.id }}" data-project-title="{{ project.title }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <p class="text-gray-500 mb-4">暂无发起的项目</p>
+                {% if current_user_exists %}
+                    <a href="/projects/create" class="bg-primary text-white font-semibold px-6 py-3 rounded-md hover:bg-primary/90 transition-colors inline-block">
+                        发起项目
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- 参与的项目 -->
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4">{{ profile_user.username }} 参与的项目</h2>
+        {% if participated_projects.len() > 0 %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for project in participated_projects %}
+                    <div class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                        <h3 class="text-lg font-semibold mb-2"><a href="/projects/{{ project.id }}" class="hover:text-primary">{{ project.title }}</a></h3>
+                        <p class="text-gray-600 mb-4 line-clamp-2">{{ project.summary }}</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            {% for tag in project.tags %}
+                                <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-500">角色: {{ project.role }}</span>
+                            <span class="text-sm text-gray-500">{{ project.joined_at }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <p class="text-gray-500">暂无参与的项目</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- 提交的创意 -->
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4">{{ profile_user.username }} 提交的创意</h2>
+        {% if user_ideas.len() > 0 %}
+            <div class="space-y-4">
+                {% for idea in user_ideas %}
+                    <div class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-semibold"><a href="/ideas/{{ idea.id }}" class="hover:text-primary">{{ idea.title }}</a></h3>
+                            <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">{{ idea.idea_type }}</span>
+                        </div>
+                        <p class="text-gray-600 mb-4 line-clamp-3">{{ idea.content }}</p>
+                        <div class="flex justify-between items-center">
+                            <a href="/projects/{{ idea.project_id }}" class="text-primary hover:underline text-sm">查看项目</a>
+                            <span class="text-sm text-gray-500">{{ idea.created_at }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <p class="text-gray-500">暂无提交的创意</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- 删除项目确认模态框 -->
+    <div id="delete-project-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">确认删除</h3>
+                <button id="close-delete-project-modal" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="mb-4">确定要删除项目 <span id="project-title" class="font-medium"></span> 吗？此操作无法撤销。</p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-delete-project" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
+                    取消
+                </button>
+                <button id="confirm-delete-project" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors">
+                    确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活动记录部分 -->
+    <div class="mt-8">
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">活动记录</h3>
+        <div class="bg-white rounded-lg shadow-md p-4">
+            {% if user_activities.is_empty() %}
+                <p class="text-gray-500">暂无活动记录</p>
+            {% else %}
+                <div class="space-y-4">
+                    {% for activity in user_activities %}
+                        <div class="flex items-start p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                            <div class="flex-shrink-0 mr-4">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span class="text-blue-600 font-semibold">{{ activity.activity_type.chars().next().unwrap_or('A') }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-900">{{ activity.action }}</h4>
+                                    <span class="text-sm text-gray-500">{{ activity.created_at.format("%Y-%m-%d %H:%M") }}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    {{ activity.activity_type }} - {{ activity.entity_type }}
+                                </p>
+                                {% if activity.details != "" %}
+                                    <p class="text-sm text-gray-500 mt-1">{{ activity.details }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 删除项目功能
+            const deleteProjectBtns = document.querySelectorAll('.delete-project-btn');
+            const deleteProjectModal = document.getElementById('delete-project-modal');
+            const closeDeleteProjectModal = document.getElementById('close-delete-project-modal');
+            const cancelDeleteProject = document.getElementById('cancel-delete-project');
+            const confirmDeleteProject = document.getElementById('confirm-delete-project');
+            const projectTitleElement = document.getElementById('project-title');
+            let currentProjectId = null;
+
+            deleteProjectBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentProjectId = this.getAttribute('data-project-id');
+                    const projectTitle = this.getAttribute('data-project-title');
+                    projectTitleElement.textContent = projectTitle;
+                    deleteProjectModal.classList.remove('hidden');
+                });
+            });
+
+            if (closeDeleteProjectModal) {
+                closeDeleteProjectModal.addEventListener('click', function() {
+                    deleteProjectModal.classList.add('hidden');
+                });
+            }
+
+            if (cancelDeleteProject) {
+                cancelDeleteProject.addEventListener('click', function() {
+                    deleteProjectModal.classList.add('hidden');
+                });
+            }
+
+            if (confirmDeleteProject) {
+                confirmDeleteProject.addEventListener('click', function() {
+                    if (currentProjectId) {
+                        // 发送删除项目的请求
+                        fetch(`/projects/${currentProjectId}/delete`, {
+                            method: 'DELETE',
+                            credentials: 'same-origin'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // 刷新页面
+                                window.location.reload();
+                            } else {
+                                alert('删除项目失败: ' + (data.message || '未知错误'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('删除项目失败:', error);
+                            alert('删除项目失败: 网络错误');
+                        });
+                    }
+                });
+            }
+
+            // 点击模态框外部关闭
+            if (deleteProjectModal) {
+                deleteProjectModal.addEventListener('click', function(e) {
+                    if (e.target === deleteProjectModal) {
+                        deleteProjectModal.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

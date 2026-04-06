@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag_name }} - 标签详情{% endblock %}
+
+{% block content %}
+    <!-- 标签信息 -->
+    <section class="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div class="flex items-center">
+            <div class="bg-primary/10 text-primary font-semibold px-4 py-2 rounded-full mr-4">
+                {{ tag_name }}
+            </div>
+            <span class="text-gray-500">{{ projects.len() }} 个项目</span>
+        </div>
+    </section>
+
+    <!-- 项目列表 -->
+    <section>
+        <h2 class="text-xl font-bold mb-4">相关项目</h2>
+        {% if projects.len() > 0 %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for project in projects %}
+                    <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture&image_size=square" alt="User avatar" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">{{ project.username }}</p>
+                                    <p class="text-sm text-gray-500">{{ project.created_at }}</p>
+                                </div>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">{{ project.title }}</h3>
+                            <p class="text-gray-600 mb-4 line-clamp-2">{{ project.summary }}</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                {% for tag in project.tags %}
+                                    <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">{{ project.stage }}</span>
+                                <a href="/projects/{{ project.id }}" class="text-primary hover:underline">查看详情</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <p class="text-gray-500">暂无相关项目</p>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

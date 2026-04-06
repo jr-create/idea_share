@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}标签 - 项目共创平台{% endblock %}
+
+{% block content %}
+    <!-- 标签导航 -->
+    <section class="mb-8">
+        <h1 class="text-2xl font-bold mb-6">标签</h1>
+        <div id="tags-container" class="flex flex-wrap gap-3">
+            {% for tag in all_tags %}
+                <a href="/tags/{{ tag.name }}" class="bg-white shadow-sm hover:shadow-md transition-shadow px-4 py-2 rounded-full flex items-center">
+                    <span>{{ tag.name }}</span>
+                    <span class="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ tag.count }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+    
+    <script>
+        // 缓存标签数据
+        const tagsData = {% raw %}{{ all_tags | tojson }}{% endraw %};
+        if (tagsData && tagsData.length > 0) {
+            cacheTags(tagsData);
+        }
+        
+        // 页面加载时检查缓存
+        window.addEventListener('load', function() {
+            // 检查是否有缓存的标签数据
+            const cachedTags = getCachedTags();
+            if (cachedTags && cachedTags.length > 0) {
+                // 如果有缓存，使用缓存数据
+                console.log('使用缓存的标签数据');
+            }
+        });
+    </script>
+{% endblock %}

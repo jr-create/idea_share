@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 项目共创平台{% endblock %}
+
+{% block content %}
+    <!-- 英雄区 -->
+    <section class="bg-gradient-primary text-white rounded-xl p-8 md:p-12 mb-12 shadow-lg">
+        <div class="max-w-3xl">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-white">让创意变为现实</h1>
+            <p class="text-xl md:text-2xl mb-6 text-white/90">加入我们的社区，与志同道合的人一起协作，将想法转化为成功的项目。</p>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a href="/projects" class="bg-white text-primary font-semibold px-6 py-3 rounded-md hover:bg-gray-100 transition-colors text-center button-press">
+                    浏览项目
+                </a>
+                <a href="/projects/create" class="bg-gradient-accent text-white font-semibold px-6 py-3 rounded-md hover:opacity-90 transition-colors text-center button-press">
+                    发起项目
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 精选项目 -->
+    <section class="mb-12 spacing-section">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-section">精选项目</h2>
+            <a href="/projects" class="text-primary hover:underline font-medium">查看全部</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for project in featured_projects %}
+                <div class="bg-white rounded-lg shadow-card hover:shadow-card-hover transition-all-300 overflow-hidden card-hover">
+                    <div class="p-6 spacing-card">
+                        <div class="flex items-center mb-4">
+                            <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture&image_size=square" alt="User avatar" class="w-10 h-10 rounded-full mr-3">
+                            <div>
+                                <p class="font-medium">{{ project.username }}</p>
+                                <p class="text-small">{{ project.created_at }}</p>
+                            </div>
+                        </div>
+                        <h3 class="text-subsection mb-2">{{ project.title }}</h3>
+                        <p class="text-body mb-4 line-clamp-2">{{ project.summary }}</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            {% for tag in project.tags %}
+                                <span class="badge-primary">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="badge-secondary">{{ project.stage }}</span>
+                            <a href="/projects/{{ project.id }}" class="text-primary hover:underline font-medium">查看详情</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- 热门标签 -->
+    <section class="mb-12 spacing-section">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-section">热门标签</h2>
+            <a href="/tags" class="text-primary hover:underline font-medium">查看全部</a>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            {% for tag in popular_tags %}
+                <a href="/tags/{{ tag.name }}" class="bg-white shadow-card hover:shadow-card-hover transition-all-300 px-4 py-2 rounded-full flex items-center card-hover">
+                    <span class="font-medium">{{ tag.name }}</span>
+                    <span class="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ tag.count }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+
+
+    <!-- 行动号召 -->
+    <section class="bg-gradient-primary text-white rounded-xl p-8 md:p-12 text-center shadow-lg">
+        <h2 class="text-2xl md:text-3xl font-bold mb-4 text-white">准备好开始你的项目了吗？</h2>
+        <p class="mb-6 text-white/90">加入我们的社区，与他人协作，将你的创意变为现实。</p>
+        {% if user_exists %}
+            <a href="/projects" class="bg-white text-primary font-semibold px-6 py-3 rounded-md hover:bg-gray-100 transition-colors inline-block button-press">
+                快去参加项目
+            </a>
+        {% else %}
+            <a href="/register" class="bg-white text-primary font-semibold px-6 py-3 rounded-md hover:bg-gray-100 transition-colors inline-block button-press">
+                立即注册
+            </a>
+        {% endif %}
+    </section>
+{% endblock %}
